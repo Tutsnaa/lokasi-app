@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Gedung;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class GedungController extends Controller
 {
@@ -17,50 +18,108 @@ class GedungController extends Controller
         return response()->json($gedung); // Ubah ke view('gedung.index', compact('gedung')) jika menggunakan Blade
     }
 
+    // Method khusus untuk pencarian dari home -> langsung ke detail
+    // Pencarian dari home -> mengarahkan ke halaman detail (gedung/show.blade.php)
+    public function search(Request $request)
+    {
+        $keyword = $request->input('q');
+
+        // Cari gedung berdasarkan nama_gedung atau keterangan
+        $gedung = Gedung::where('nama_gedung', 'like', "%{$keyword}%")
+                        ->orWhere('keterangan', 'like', "%{$keyword}%")
+                        ->first();
+
+        if ($gedung) {
+            return view('gedung.show', compact('gedung'));
+        }
+
+        return redirect('/')->with('error', 'Gedung dengan kata kunci "' . $keyword . '" tidak ditemukan.');
+    }
+
+    // Detail gedung berdasarkan ID
+    public function show($id)
+    {
+        $gedung = Gedung::findOrFail($id);
+        return view('gedung.show', compact('gedung'));
+    }
+    
+
+    public function create()
+{
+    return view('gedung.create');
+}
+
     /**
      * Simpan data gedung baru.
      */
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'nama_gedung' => 'required|string|max:225',
-            'latitude'    => 'required|numeric|between:-90,90',
-            'longitude'   => 'required|numeric|between:-180,180',
-            'keterangan'  => 'nullable|string',
-            'foto'        => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
-        ]);
+  public function store(Request $request)
+{
+    // 1. Validasi input awal (memastikan koordinat diisi dan formatnya mengandung koma)
+    $request->validate([
+        'nama_gedung' => 'required|string|max:225',
+        'koordinat'   => ['required', 'string', 'regex:/^[-+]?[0-9]*\.?[0-9]+,\s*[-+]?[0-9]*\.?[0-9]+$/'],
+        'keterangan'  => 'nullable|string',
+        'foto'        => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+    ], [
+        'koordinat.regex' => 'Format koordinat tidak valid. Gunakan format: Latitude, Longitude (contoh: -8.613462, 115.186353)',
+    ]);
 
-        if ($request->hasFile('foto')) {
-            $validated['foto'] = $request->file('foto')->store('gedung', 'public');
-        }
+    // 2. Pecah string koordinat menjadi latitude dan longitude
+    $coords = explode(',', $request->koordinat);
+    $latitude = trim($coords[0] ?? '');
+    $longitude = trim($coords[1] ?? '');
 
-        $gedung = Gedung::create($validated);
+    // 3. Validasi range angka latitude & longitude
+    $validator = Validator::make([
+        'latitude'  => $latitude,
+        'longitude' => $longitude,
+    ], [
+        'latitude'  => 'required|numeric|between:-90,90',
+        'longitude' => 'required|numeric|between:-180,180',
+    ]);
 
-        return response()->json([
-            'message' => 'Data gedung berhasil ditambahkan',
-            'data'    => $gedung,
-        ], 201);
+    if ($validator->fails()) {
+        return back()->withErrors($validator)->withInput();
     }
 
+    // 4. Siapkan data untuk disimpan ke database
+    $data = [
+        'nama_gedung' => $request->nama_gedung,
+        'latitude'    => $latitude,
+        'longitude'   => $longitude,
+        'keterangan'  => $request->keterangan,
+    ];
+
+    // 5. Upload foto jika ada
+    if ($request->hasFile('foto')) {
+        $data['foto'] = $request->file('foto')->store('gedung', 'public');
+    }
+
+    // 6. Simpan ke database
+    Gedung::create($data);
+
+    // 7. Redirect ke halaman index dengan pesan sukses
+    return redirect()->route('gedung.index')->with('success', 'Data gedung berhasil ditambahkan!');
+}
     /**
      * Tampilkan detail satu gedung.
      */
-    public function show($id)
-{
-    $gedung = Gedung::find($id);
+//     public function show($id)
+// {
+//     $gedung = Gedung::find($id);
 
-    if (!$gedung) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Data gedung dengan ID ' . $id . ' tidak ditemukan'
-        ], 404);
-    }
+//     if (!$gedung) {
+//         return response()->json([
+//             'success' => false,
+//             'message' => 'Data gedung dengan ID ' . $id . ' tidak ditemukan'
+//         ], 404);
+//     }
 
-    return response()->json([
-        'success' => true,
-        'data'    => $gedung
-    ], 200);
-}
+//     return response()->json([
+//         'success' => true,
+//         'data'    => $gedung
+//     ], 200);
+// }
 
     /**
      * Update data gedung.

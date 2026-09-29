@@ -15,24 +15,17 @@ class GedungSeeder extends Seeder
         // Contoh data sampel gedung
         $dataGedung = [
             [
-                'nama_gedung' => 'Gedung Rektorat',
-                'latitude'    => -6.17539240,
-                'longitude'   => 106.82715300,
-                'keterangan'  => 'Gedung utama pusat administrasi dan rektorat.',
+                'nama_gedung' => 'Mart Pusat KPN Kamadhuk',
+                'latitude'    => -8.67426225,
+                'longitude'   => 115.21273856,
+                'keterangan'  => 'Pertokoan/tempat perbelanjaan umum.',
                 'foto'        => null,
             ],
             [
-                'nama_gedung' => 'Gedung Fakultas Teknik',
-                'latitude'    => -6.17600000,
-                'longitude'   => 106.82800000,
-                'keterangan'  => 'Gedung perkuliahan mahasiswa Fakultas Teknik.',
-                'foto'        => null,
-            ],
-            [
-                'nama_gedung' => 'Gedung Perpustakaan Pusat',
-                'latitude'    => -6.17700000,
-                'longitude'   => 106.82900000,
-                'keterangan'  => 'Perpustakaan umum dan fasilitas laboratorium komputer.',
+                'nama_gedung' => 'Pura Cadu Sakti',
+                'latitude'    => -8.67438585,
+                'longitude'   => 115.21212622,
+                'keterangan'  => 'Pura tempat persembahyangan.',
                 'foto'        => null,
             ],
         ];
