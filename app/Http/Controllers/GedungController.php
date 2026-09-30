@@ -13,141 +13,150 @@ class GedungController extends Controller
      * Tampilkan semua data gedung.
      */
     public function index()
-{
-    // Mengambil semua data gedung
-    $gedung = Gedung::all();
+    {
+        $gedung = Gedung::all();
+        return view('gedung.index', compact('gedung'));
+    }
 
-    // Mengembalikan tampilan file blade di resources/views/gedung/index.blade.php
-    return view('gedung.index', compact('gedung'));
-}
-
-    // Detail gedung berdasarkan ID
+    /**
+     * Detail gedung berdasarkan ID.
+     */
     public function show($id)
     {
         $gedung = Gedung::findOrFail($id);
         return view('gedung.show', compact('gedung'));
     }
-    
 
+    /**
+     * Form tambah gedung.
+     */
     public function create()
-{
-    return view('gedung.create');
-}
+    {
+        return view('gedung.create');
+    }
 
     /**
      * Simpan data gedung baru.
      */
-  public function store(Request $request)
-{
-    // 1. Validasi input awal (memastikan koordinat diisi dan formatnya mengandung koma)
-    $request->validate([
-        'nama_gedung' => 'required|string|max:225',
-        'koordinat'   => ['required', 'string', 'regex:/^[-+]?[0-9]*\.?[0-9]+,\s*[-+]?[0-9]*\.?[0-9]+$/'],
-        'keterangan'  => 'nullable|string',
-        'foto'        => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
-    ], [
-        'koordinat.regex' => 'Format koordinat tidak valid. Gunakan format: Latitude, Longitude (contoh: -8.613462, 115.186353)',
-    ]);
+    public function store(Request $request)
+    {
+        $request->validate([
+            'nama_gedung' => 'required|string|max:225',
+            'koordinat'   => ['required', 'string', 'regex:/^[-+]?[0-9]*\.?[0-9]+,\s*[-+]?[0-9]*\.?[0-9]+$/'],
+            'keterangan'  => 'nullable|string',
+            'foto'        => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+        ], [
+            'koordinat.regex' => 'Format koordinat tidak valid. Gunakan format: Latitude, Longitude (contoh: -8.613462, 115.186353)',
+        ]);
 
-    // 2. Pecah string koordinat menjadi latitude dan longitude
-    $coords = explode(',', $request->koordinat);
-    $latitude = trim($coords[0] ?? '');
-    $longitude = trim($coords[1] ?? '');
+        $coords = explode(',', $request->koordinat);
+        $latitude = trim($coords[0] ?? '');
+        $longitude = trim($coords[1] ?? '');
 
-    // 3. Validasi range angka latitude & longitude
-    $validator = Validator::make([
-        'latitude'  => $latitude,
-        'longitude' => $longitude,
-    ], [
-        'latitude'  => 'required|numeric|between:-90,90',
-        'longitude' => 'required|numeric|between:-180,180',
-    ]);
+        $validator = Validator::make([
+            'latitude'  => $latitude,
+            'longitude' => $longitude,
+        ], [
+            'latitude'  => 'required|numeric|between:-90,90',
+            'longitude' => 'required|numeric|between:-180,180',
+        ]);
 
-    if ($validator->fails()) {
-        return back()->withErrors($validator)->withInput();
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput();
+        }
+
+        $data = [
+            'nama_gedung' => $request->nama_gedung,
+            'latitude'    => $latitude,
+            'longitude'   => $longitude,
+            'keterangan'  => $request->keterangan,
+        ];
+
+        if ($request->hasFile('foto')) {
+            $data['foto'] = $request->file('foto')->store('gedung', 'public');
+        }
+
+        Gedung::create($data);
+
+        return redirect()->route('gedung.index')->with('success', 'Data gedung berhasil ditambahkan!');
     }
 
-    // 4. Siapkan data untuk disimpan ke database
-    $data = [
-        'nama_gedung' => $request->nama_gedung,
-        'latitude'    => $latitude,
-        'longitude'   => $longitude,
-        'keterangan'  => $request->keterangan,
-    ];
-
-    // 5. Upload foto jika ada
-    if ($request->hasFile('foto')) {
-        $data['foto'] = $request->file('foto')->store('gedung', 'public');
-    }
-
-    // 6. Simpan ke database
-    Gedung::create($data);
-
-    // 7. Redirect ke halaman index dengan pesan sukses
-    return redirect()->route('gedung.index')->with('success', 'Data gedung berhasil ditambahkan!');
-}
     /**
-     * Tampilkan detail satu gedung.
+     * Tampilkan form edit data gedung.
      */
-//     public function show($id)
-// {
-//     $gedung = Gedung::find($id);
-
-//     if (!$gedung) {
-//         return response()->json([
-//             'success' => false,
-//             'message' => 'Data gedung dengan ID ' . $id . ' tidak ditemukan'
-//         ], 404);
-//     }
-
-//     return response()->json([
-//         'success' => true,
-//         'data'    => $gedung
-//     ], 200);
-// }
+    public function edit($id)
+    {
+        $gedung = Gedung::findOrFail($id);
+        return view('gedung.update', compact('gedung'));
+    }
 
     /**
      * Update data gedung.
      */
-    public function update(Request $request, Gedung $gedung)
+    public function update(Request $request, $id)
     {
-        $validated = $request->validate([
-            'nama_gedung' => 'sometimes|required|string|max:225',
-            'latitude'    => 'sometimes|required|numeric|between:-90,90',
-            'longitude'   => 'sometimes|required|numeric|between:-180,180',
+        $gedung = Gedung::findOrFail($id);
+
+        // Validasi input
+        $request->validate([
+            'nama_gedung' => 'required|string|max:225',
+            'koordinat'   => ['required', 'string', 'regex:/^[-+]?[0-9]*\.?[0-9]+,\s*[-+]?[0-9]*\.?[0-9]+$/'],
             'keterangan'  => 'nullable|string',
             'foto'        => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+        ], [
+            'koordinat.regex' => 'Format koordinat tidak valid. Gunakan format: Latitude, Longitude (contoh: -8.613462, 115.186353)',
         ]);
 
+        // Pecah koordinat
+        $coords = explode(',', $request->koordinat);
+        $latitude = trim($coords[0] ?? '');
+        $longitude = trim($coords[1] ?? '');
+
+        $validator = Validator::make([
+            'latitude'  => $latitude,
+            'longitude' => $longitude,
+        ], [
+            'latitude'  => 'required|numeric|between:-90,90',
+            'longitude' => 'required|numeric|between:-180,180',
+        ]);
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput();
+        }
+
+        $data = [
+            'nama_gedung' => $request->nama_gedung,
+            'latitude'    => $latitude,
+            'longitude'   => $longitude,
+            'keterangan'  => $request->keterangan,
+        ];
+
+        // Upload foto baru jika ada dan hapus foto lama
         if ($request->hasFile('foto')) {
-            // Hapus foto lama jika ada
             if ($gedung->foto && Storage::disk('public')->exists($gedung->foto)) {
                 Storage::disk('public')->delete($gedung->foto);
             }
-            $validated['foto'] = $request->file('foto')->store('gedung', 'public');
+            $data['foto'] = $request->file('foto')->store('gedung', 'public');
         }
 
-        $gedung->update($validated);
+        $gedung->update($data);
 
-        return response()->json([
-            'message' => 'Data gedung berhasil diperbarui',
-            'data'    => $gedung,
-        ]);
+        return redirect()->route('gedung.index')->with('success', 'Data gedung berhasil diperbarui!');
     }
 
     /**
      * Hapus data gedung.
      */
-    public function destroy(Gedung $gedung)
+    public function destroy($id)
     {
+        $gedung = Gedung::findOrFail($id);
+
         if ($gedung->foto && Storage::disk('public')->exists($gedung->foto)) {
             Storage::disk('public')->delete($gedung->foto);
         }
 
         $gedung->delete();
 
-        return response()->json([
-            'message' => 'Data gedung berhasil dihapus',
-        ]);
+        return redirect()->route('gedung.index')->with('success', 'Data gedung berhasil dihapus!');
     }
 }

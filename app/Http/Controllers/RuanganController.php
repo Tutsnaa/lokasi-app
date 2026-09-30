@@ -14,9 +14,7 @@ class RuanganController extends Controller
      */
     public function index()
     {
-        // Eager loading relasi gedung untuk efisiensi query
         $ruangan = Ruangan::with('gedung')->latest()->get();
-
         return view('ruangan.index', compact('ruangan'));
     }
 
@@ -25,7 +23,7 @@ class RuanganController extends Controller
      */
     public function create()
     {
-        $gedung = Gedung::all(); // Untuk dropdown pilihan gedung pada form
+        $gedung = Gedung::all();
         return view('ruangan.create', compact('gedung'));
     }
 
@@ -37,14 +35,13 @@ class RuanganController extends Controller
         $request->validate([
             'id_gedung'    => 'required|exists:gedung,id',
             'nama_ruangan' => 'required|string|max:225',
-            'lantai'       => 'required|integer',
+            'lantai'       => 'required|integer|min:1',
             'keterangan'   => 'nullable|string',
-            'foto'         => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'foto'         => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
 
         $data = $request->only(['id_gedung', 'nama_ruangan', 'lantai', 'keterangan']);
 
-        // Upload foto jika ada
         if ($request->hasFile('foto')) {
             $data['foto'] = $request->file('foto')->store('ruangan', 'public');
         }
@@ -71,7 +68,7 @@ class RuanganController extends Controller
     {
         $ruangan = Ruangan::findOrFail($id);
         $gedung = Gedung::all();
-        return view('ruangan.edit', compact('ruangan', 'gedung'));
+        return view('ruangan.update', compact('ruangan', 'gedung'));
     }
 
     /**
@@ -84,20 +81,17 @@ class RuanganController extends Controller
         $request->validate([
             'id_gedung'    => 'required|exists:gedung,id',
             'nama_ruangan' => 'required|string|max:225',
-            'lantai'       => 'required|integer',
+            'lantai'       => 'required|integer|min:1',
             'keterangan'   => 'nullable|string',
-            'foto'         => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'foto'         => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
 
         $data = $request->only(['id_gedung', 'nama_ruangan', 'lantai', 'keterangan']);
 
-        // Jika user mengunggah foto baru
         if ($request->hasFile('foto')) {
-            // Hapus foto lama jika ada
             if ($ruangan->foto && Storage::disk('public')->exists($ruangan->foto)) {
                 Storage::disk('public')->delete($ruangan->foto);
             }
-            // Simpan foto baru
             $data['foto'] = $request->file('foto')->store('ruangan', 'public');
         }
 
@@ -114,7 +108,6 @@ class RuanganController extends Controller
     {
         $ruangan = Ruangan::findOrFail($id);
 
-        // Hapus foto dari storage jika ada
         if ($ruangan->foto && Storage::disk('public')->exists($ruangan->foto)) {
             Storage::disk('public')->delete($ruangan->foto);
         }
