@@ -13,28 +13,13 @@ class GedungController extends Controller
      * Tampilkan semua data gedung.
      */
     public function index()
-    {
-        $gedung = Gedung::latest()->get();
-        return response()->json($gedung); // Ubah ke view('gedung.index', compact('gedung')) jika menggunakan Blade
-    }
+{
+    // Mengambil semua data gedung
+    $gedung = Gedung::all();
 
-    // Method khusus untuk pencarian dari home -> langsung ke detail
-    // Pencarian dari home -> mengarahkan ke halaman detail (gedung/show.blade.php)
-    public function search(Request $request)
-    {
-        $keyword = $request->input('q');
-
-        // Cari gedung berdasarkan nama_gedung atau keterangan
-        $gedung = Gedung::where('nama_gedung', 'like', "%{$keyword}%")
-                        ->orWhere('keterangan', 'like', "%{$keyword}%")
-                        ->first();
-
-        if ($gedung) {
-            return view('gedung.show', compact('gedung'));
-        }
-
-        return redirect('/')->with('error', 'Gedung dengan kata kunci "' . $keyword . '" tidak ditemukan.');
-    }
+    // Mengembalikan tampilan file blade di resources/views/gedung/index.blade.php
+    return view('gedung.index', compact('gedung'));
+}
 
     // Detail gedung berdasarkan ID
     public function show($id)
