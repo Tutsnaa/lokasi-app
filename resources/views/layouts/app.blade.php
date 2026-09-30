@@ -5,14 +5,44 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Aplikasi Gedung')</title>
-    <!-- Contoh Bootstrap 5 CDN -->
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+    html {
+        overflow-y: scroll;
+    }
+    </style>
 </head>
 
 <body>
-    <nav class="navbar navbar-dark bg-dark mb-4">
+
+    <!-- Navbar tetap saat scroll -->
+    <nav class="navbar navbar-dark bg-dark sticky-top mb-4">
         <div class="container">
-            <a class="navbar-brand" href="#">Sistem Manajemen Gedung</a>
+
+            <a class="navbar-brand" href="#">
+                Sistem Manajemen Gedung
+            </a>
+
+            @auth
+            <div class="d-flex align-items-center gap-3">
+
+                <span class="text-white">
+                    Halo, {{ Auth::user()->nama }}
+                </span>
+
+                <form action="{{ route('logout') }}" method="POST" class="m-0">
+                    @csrf
+
+                    <button type="submit" class="btn btn-outline-light btn-sm">
+                        Logout
+                    </button>
+                </form>
+
+            </div>
+            @endauth
+
         </div>
     </nav>
 
@@ -20,8 +50,8 @@
         @yield('content')
     </div>
 
-    <!-- Script JS jika ingin mengambil data via API (Fetch/Axios) -->
     @stack('scripts')
+
 </body>
 
 </html>
